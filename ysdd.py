@@ -18,8 +18,8 @@ def login(driver):
         userId = driver.wait.until(EC.presence_of_element_located((By.ID, "userId")))
         password = driver.wait.until(EC.presence_of_element_located((By.ID, "password")))
         button = driver.wait.until(EC.element_to_be_clickable((By.ID, "loginBtn")))
-        userId.send_keys("15652389451")
-        password.send_keys("lvqipass123")
+        userId.send_keys("")
+        password.send_keys("")
         button.click()
     except TimeoutException:
         print("Box or Button not found in google.com")
