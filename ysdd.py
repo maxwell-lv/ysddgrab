@@ -6,6 +6,25 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 import pandas as pd
+from sqlalchemy.sql import select
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine, Column, Integer, String, Float, Date, MetaData
+from sqlalchemy.ext.declarative import declarative_base
+Base = declarative_base()
+import sqlite3
+
+db = "sqlite:///ysdd.db"
+Session = sessionmaker()
+
+class MyList(Base):
+    __tablename__ = 'list'
+    name = Column(String, primary_key=True)
+    type = Column(String)
+    date = Column(Date, primary_key=True)
+    marketvalue = Column(Integer)
+    investorratio = Column(Float)
+    traderratio = Column(Float)
+    ratioperday = Column(Float)
 
 def init_driver():
     driver = webdriver.Chrome()
@@ -75,6 +94,12 @@ def parseLine(driver, line):
     row['position'] = fields[3].text
     return row
 
+def open_database():
+    engine = create_engine(db)
+    perf = pd.read_sql_table('list', engine)
+    latest_date = perf.iloc[-1]['date']
+    print(type(latest_date))
+
 if __name__ == "__main__":
     userId = sys.argv[1]
     password = sys.argv[2]
@@ -83,6 +108,6 @@ if __name__ == "__main__":
     time.sleep(5)
     table = getPerformance(driver)
     df = pd.DataFrame(table)
-    df.to_excel('performance.xlsx', index=False)
+    df.to_excel('performance.xlsx',  sheet_name='test', index=False)
     driver.quit()
 
