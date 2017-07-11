@@ -56,7 +56,7 @@ def getPerformanceList(driver, page_link):
         except TimeoutException:
             break
     performance_list = []
-    for l in table[2:-1]:
+    for l in table[1:-1]:
         row = parseLine(driver, l)
         performance_list.append(row)
     return performance_list
