@@ -12,6 +12,9 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, Date, Meta
 from sqlalchemy.ext.declarative import declarative_base
 Base = declarative_base()
 import sqlite3
+from datetime import datetime
+import re
+
 
 db = "sqlite:///ysdd.db"
 Session = sessionmaker()
@@ -28,7 +31,7 @@ class MyList(Base):
 
 def init_driver():
     driver = webdriver.Chrome()
-    driver.wait = WebDriverWait(driver, 5)
+    driver.wait = WebDriverWait(driver, 10)
     return driver
 
 
@@ -99,9 +102,83 @@ def parse_line(driver, line):
 
 def open_database():
     engine = create_engine(db)
+    return engine
+
+
+def get_latest_date(engine):
     perf = pd.read_sql_table('list', engine)
     latest_date = perf.iloc[-1]['date']
-    print(type(latest_date))
+    return latest_date
+
+
+def get_phase(driver):
+    driver.get('http://www.vipysdd.com/common/xmjsList.html?code=xmjs&no=0')
+    engine = open_database()
+    latest_date = get_latest_date(engine)
+    table = get_phase_list(driver)
+    last_date = table[-1]['date']
+    while latest_date < last_date:
+        try:
+            next_page = driver.wait.until(EC.presence_of_element_located((By.CLASS_NAME, "jp-next")))
+            next_page.click()
+            time.sleep(5)
+            next_table = get_phase_list(driver)
+            table = table + next_table
+            last_date = next_table[-1]['date']
+        except TimeoutException:
+            print("can't find next page")
+
+    i = 0
+    table.reverse()
+    for row in table:
+        if row['date'] <= latest_date:
+            i += 1
+        else:
+            break
+    write_to_db(engine, table[i:])
+
+
+def write_to_db(engine, table):
+    Session.configure(bind=engine)
+    session = Session()
+    for row in table:
+        days = find_period(row['type'])
+        session.add(MyList(name=row['name'], type=row['type'], date=row['date'],
+                           marketvalue=int(row['marketvalue']), investorratio=float(row['investorratio'])/100,
+                           traderratio=float(row['traderratio'])/100, ratioperday=float(row['investorratio'])/100/days)
+                    )
+    session.commit()
+
+
+def find_period(value):
+    result = re.search("\d+\*\d+", value)
+    p, n = result.group(0).split('*')
+    return int(p)
+
+
+def get_phase_list(driver):
+    try:
+        table_element = driver.wait.until(EC.presence_of_element_located((By.TAG_NAME, 'tbody')))
+        rows = table_element.find_elements_by_tag_name('tr')
+        table = []
+        for row in rows:
+            fields = row.find_elements_by_tag_name('td')
+            phase = {}
+            phase['name'], phase['type'] = get_name_type(fields[0].text)
+            phase['date'] = datetime.strptime(fields[1].text, "%Y-%m-%d")
+            phase['marketvalue'] = fields[2].text
+            phase['investorratio'] = fields[3].text
+            phase['traderratio'] = fields[4].text
+            table.append(phase)
+        return table
+    except TimeoutException:
+        print("can't get phase list")
+
+
+def get_name_type(project):
+    parts = project.rstrip('】').split('【')
+    return parts[0], parts[1]
+
 
 if __name__ == "__main__":
     userId = sys.argv[1]
