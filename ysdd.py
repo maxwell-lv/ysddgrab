@@ -64,6 +64,7 @@ def getPerformance(driver):
         table = table + getPerformanceList(driver, page_link)
     return table
 
+
 def getPerformanceList(driver, page_link):
     driver.get(page_link)
     table = []
@@ -76,11 +77,12 @@ def getPerformanceList(driver, page_link):
             break
     performance_list = []
     for l in table[1:-1]:
-        row = parseLine(driver, l)
+        row = parse_line(driver, l)
         performance_list.append(row)
     return performance_list
 
-def parseLine(driver, line):
+
+def parse_line(driver, line):
     fields = line.find_elements_by_tag_name('td')
     # project_tag = fields[0].find_elements_by_tag_name('span')
     row = {}
@@ -93,6 +95,7 @@ def parseLine(driver, line):
     row['rate'] = fields[2].text
     row['position'] = fields[3].text
     return row
+
 
 def open_database():
     engine = create_engine(db)
