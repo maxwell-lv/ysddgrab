@@ -81,6 +81,8 @@ def getPerformanceList(driver, page_link):
     performance_list = []
     for l in table[1:-1]:
         row = parse_line(driver, l)
+        if len(row) == 0:
+            continue
         performance_list.append(row)
     return performance_list
 
@@ -89,6 +91,8 @@ def parse_line(driver, line):
     fields = line.find_elements_by_tag_name('td')
     # project_tag = fields[0].find_elements_by_tag_name('span')
     row = {}
+    if len(fields) < 4:
+        return row
     # row['name'] = project_tag[0].text
     # row['type'] = project_tag[1].text
     project = fields[0].text.split('\n')
