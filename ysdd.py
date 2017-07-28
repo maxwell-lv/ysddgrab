@@ -14,6 +14,7 @@ Base = declarative_base()
 import sqlite3
 from datetime import datetime
 import re
+import click
 
 
 db = "sqlite:///ysdd.db"
@@ -184,14 +185,34 @@ def get_name_type(project):
     return parts[0], parts[1]
 
 
-if __name__ == "__main__":
-    userId = sys.argv[1]
-    password = sys.argv[2]
+@click.group()
+def main():
+    click.echo('ysdd grabber')
+
+
+@main.command()
+@click.argument('userid')
+@click.argument('password')
+def perf(userid, password):
     driver = init_driver()
-    login(driver, userId, password)
+    login(driver, userid, password)
     time.sleep(5)
     table = getPerformance(driver)
     df = pd.DataFrame(table)
     df.to_excel('performance.xlsx',  sheet_name='test', index=False)
     driver.quit()
+
+
+@click.argument('userid')
+@click.argument('password')
+def hist(userid, password):
+    driver = init_driver()
+    login(driver, userid, password)
+    time.sleep(5)
+    get_phase(driver)
+    driver.quit()
+
+
+if __name__ == "__main__":
+    main()
 
