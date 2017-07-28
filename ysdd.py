@@ -203,6 +203,7 @@ def perf(userid, password):
     driver.quit()
 
 
+@main.command()
 @click.argument('userid')
 @click.argument('password')
 def hist(userid, password):
